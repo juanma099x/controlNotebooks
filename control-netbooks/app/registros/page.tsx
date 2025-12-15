@@ -71,7 +71,7 @@ export default async function RecordsPage() {
             </Link>
           </div>
         </header>
-        <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-x-auto">
           {/* La clase 'border-collapse' es clave para que los bordes se fusionen */}
           <table className="min-w-full border-collapse">
             <thead className="bg-gray-100">
@@ -130,7 +130,7 @@ export default async function RecordsPage() {
                         )}
                         <form action={deleteLoan}>
                           <input type="hidden" name="id" value={record.id} />
-                          <button type="submit" className="p-2 rounded-full hover:bg-red-100 text-red-600 transition-colors" title="Borrar">
+                          <button type="submit" className="p-2 rounded-full bg-red-500 text-white transition-colors" title="Borrar">
                             <Trash2 size={18} />
                           </button>
                         </form>

@@ -1,38 +1,77 @@
-import Link from "next/link";
-import Image from "next/image";
-import { FilePlus, ClipboardList } from 'lucide-react';
+"use client";
 
-export default function HomePage() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(""); // Reset error on new submission
+
+    // Hardcoded credentials
+    if (username === "admin" && password === "admin") {
+      // On success, redirect to the dashboard
+      router.push("/dashboard");
+    } else {
+      // On failure, set error message
+      setError("Usuario o contraseña incorrectos.");
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-12 sm:p-24 bg-gray-50">
-      {/* Encabezado */}
-      <div className="text-center w-full">
-        <Image
-          src="/logo.png" 
-          alt="Logo de la Escuela"
-          width={120}
-          height={120}
-          className="mx-auto mb-6"
-        />
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-800">
-          Control de Netbooks
-        </h1>
-        <p className="text-xl sm:text-2xl text-gray-600 mt-2">
-          Escuela Industrial N°9
-        </p>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Iniciar Sesión</h1>
+          <p className="text-gray-500">
+            Bienvenido, por favor ingrese sus credenciales
+          </p>
+        </div>
 
-      {/* Contenido Principal - Botones */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-24">
-        <Link href="/netbooks/new" className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-transform hover:scale-105">
-          <FilePlus size={24} />
-          <span>Registrar Préstamo</span>
-        </Link>
-        <Link href="/registros" className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-green-700 transition-transform hover:scale-105">
-          <ClipboardList size={24} />
-          <span>Ver Registros</span>
-        </Link>
+        {error && (
+          <div className="p-3 text-center text-sm text-red-800 rounded-lg bg-red-100">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="username">Usuario</Label>
+            <Input
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Tu nombre de usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Tu contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <Button className="w-full" type="submit">
+            Iniciar Sesión
+          </Button>
+        </form>
       </div>
-    </main>
+    </div>
   );
 }
