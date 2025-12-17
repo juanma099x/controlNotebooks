@@ -1,136 +1,69 @@
-import { db, records, inventory } from '@/app/db';
-import { eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
+"use client"; // Este componente ahora maneja estado, por lo que es un Client Component.
 
-async function createLoan(formData: FormData) {
-  'use server';
-  const nombreAlumno = formData.get('nombreAlumno') as string;
-  const curso = formData.get('curso') as string;
-  const inventoryId = Number(formData.get('inventoryId'));
+import { useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { saveNetbook } from "../actions";
 
-  // Validar que se seleccionó una netbook
-  if (!inventoryId) {
-    // En una aplicación real, aquí devolveríamos un mensaje de error
-    console.error('No se seleccionó una netbook.');
-    return;
+export default function NewNetbookPage() {
+  const initialState = { message: null, errors: {} };
+  const [state, dispatch] = useActionState(saveNetbook, initialState);
+
+  // Componente para el botón de envío que muestra un estado de carga
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full px-4 py-2 font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400"
+      >
+        {pending ? "Guardando..." : "Guardar Netbook"}
+      </button>
+    );
   }
-
-  const netbook = await db.select().from(inventory).where(eq(inventory.id, inventoryId)).get();
-  const modeloNetbook = netbook?.modelo || 'Desconocido';
-  const descripcionNetbook = netbook?.descripcion || 'Sin descripción';
-
-  if (!netbook || netbook.status !== 'Disponible') {
-    // Doble chequeo para evitar prestar una netbook no disponible
-    console.error('La netbook seleccionada no está disponible.');
-    return;
-  }
-
-  // Insertar el nuevo registro de préstamo
-  await db.insert(records).values({
-    nombreAlumno,
-    curso,
-    inventoryId,
-    modeloNetbook: modeloNetbook,
-    descripcionNetbook: descripcionNetbook,
-    fechaRetiro: formData.get('fechaRetiro') as string,
-    horaRetiro: formData.get('horaRetiro') as string,
-    estado: 'Prestado',
-  });
-
-  // Actualizar el estado de la netbook a 'Prestado'
-  await db.update(inventory).set({ status: 'Prestado' }).where(eq(inventory.id, inventoryId));
-
-  revalidatePath('/registros');
-  redirect('/registros');
-}
-
-export default async function NewLoanPage() {
-  const availableNetbooks = await db.select().from(inventory).where(eq(inventory.status, 'Disponible')).all();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-50">
-      <div className="w-full max-w-2xl bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Registrar Nuevo Préstamo</h1>
-        
-        <form action={createLoan} className="space-y-6">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded-lg shadow-md w-96">
+        <h1 className="mb-6 text-2xl font-semibold text-center text-gray-700">Añadir Nueva Netbook</h1>
+        <form action={dispatch} className="space-y-4">
           <div>
-            <label htmlFor="nombreAlumno" className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del Alumno
-            </label>
+            <label htmlFor="brand" className="block mb-2 text-sm font-medium text-gray-600">Marca</label>
             <input
               type="text"
-              id="nombreAlumno"
-              name="nombreAlumno"
+              name="brand"
+              id="brand"
               required
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ej: Juan Pérez"
+              className="w-full px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
             />
+            {state.errors?.marca && <p className="mt-1 text-sm text-red-500">{state.errors.marca[0]}</p>}
           </div>
-
           <div>
-            <label htmlFor="curso" className="block text-sm font-medium text-gray-700 mb-1">
-              Curso
-            </label>
+            <label htmlFor="model" className="block mb-2 text-sm font-medium text-gray-600">Modelo</label>
             <input
               type="text"
-              id="curso"
-              name="curso"
+              name="model"
+              id="model"
               required
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ej: 5to 1ra"
+              className="w-full px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
             />
+            {state.errors?.modelo && <p className="mt-1 text-sm text-red-500">{state.errors.modelo[0]}</p>}
           </div>
-
           <div>
-            <label htmlFor="inventoryId" className="block text-sm font-medium text-gray-700 mb-1">
-              Netbook Disponible
-            </label>
-            <select
-              id="inventoryId"
-              name="inventoryId"
+            <label htmlFor="serialNumber" className="block mb-2 text-sm font-medium text-gray-600">Número de Serie</label>
+            <input
+              type="text"
+              name="serialNumber"
+              id="serialNumber"
               required
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="" disabled>
-                {availableNetbooks.length > 0 ? 'Seleccione una netbook...' : 'No hay netbooks disponibles'}
-              </option>
-              {availableNetbooks.map(netbook => (
-                <option key={netbook.id} value={netbook.id}>
-                  {netbook.descripcion} - {netbook.marca} ({netbook.modelo})
-                </option>
-              ))}
-            </select>
+              className="w-full px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+            />
+            {state.errors?.numeroSerie && <p className="mt-1 text-sm text-red-500">{state.errors.numeroSerie[0]}</p>}
           </div>
-
-          {/* --- CAMPOS DE FECHA Y HORA RESTAURADOS --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="fechaRetiro" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Retiro</label>
-              <input type="date" id="fechaRetiro" name="fechaRetiro" required defaultValue={new Date().toISOString().split('T')[0]} className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <div>
-              <label htmlFor="horaRetiro" className="block text-sm font-medium text-gray-700 mb-1">Hora de Retiro</label>
-              <input type="time" id="horaRetiro" name="horaRetiro" required defaultValue={new Date().toTimeString().split(' ')[0].substring(0, 5)} className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-          </div>
-          {/* --- FIN DE CAMPOS RESTAURADOS --- */}
-
-          <div className="flex items-center justify-end gap-4 pt-4">
-            <Link href="/registros" className="px-6 py-2 text-sm font-semibold text-gray-600 rounded-md hover:bg-gray-100">
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors disabled:bg-gray-400"
-              disabled={availableNetbooks.length === 0}
-            >
-              Guardar Préstamo
-            </button>
-          </div>
+          <SubmitButton />
+          {state.message && <p className="mt-2 text-sm text-red-500 text-center">{state.message}</p>}
         </form>
       </div>
-    </main>
+    </div>
   );
 }

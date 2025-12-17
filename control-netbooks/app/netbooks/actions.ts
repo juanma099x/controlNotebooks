@@ -1,29 +1,41 @@
-"use server";
+'use server';
 
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { records } from "../schema";
+import { z } from 'zod';
+import { db } from '../db';
+import { inventory } from '../schema';
+import { redirect } from 'next/navigation';
 
-// Inicializamos la base de datos aquí
-const sqlite = new Database("sqlite.db");
-const db = drizzle(sqlite);
-export async function createLoan(formData: FormData) {
-  const newLoan = {
-    // Asegúrate de que los nombres coincidan con tu formulario y schema
-    nombreAlumno: formData.get("studentName") as string, // 'studentName' viene del formulario
-    netbookId: formData.get("model") as string, // 'model' viene del formulario
-    fechaRetiro: new Date().toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }),
-    horaRetiro: new Date().toLocaleTimeString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }),
-  };
+// Definimos el esquema de validación con Zod
+const NetbookSchema = z.object({
+  marca: z.string().min(1, 'La marca es obligatoria.'),
+  modelo: z.string().min(1, 'El modelo es obligatorio.'),
+  numeroSerie: z.string().min(1, 'El número de serie es obligatorio.'),
+});
 
-  // Insertar en la base de datos
-  await db.insert(records).values(newLoan);
+export async function saveNetbook(prevState: any, formData: FormData) {
+  // Extraemos los datos del formulario y los validamos
+  const validatedFields = NetbookSchema.safeParse({
+    marca: formData.get('brand'),
+    modelo: formData.get('model'),
+    numeroSerie: formData.get('serialNumber'),
+  });
 
-  // Limpiar la caché de la página de inicio para que muestre el nuevo registro
-  revalidatePath("/registros");
+  // Si la validación falla, devolvemos los errores
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Faltan campos. No se pudo crear la netbook.',
+    };
+  }
 
-  // Redirigir al usuario a la página de inicio
-  redirect("/registros");
+  const { marca, modelo, numeroSerie } = validatedFields.data;
+  const descripcion = `Netbook ${marca} ${modelo} SN: ${numeroSerie}`;
+
+  try {
+    await db.insert(inventory).values({ descripcion, marca, modelo, numeroSerie, status: 'Disponible' });
+  } catch (e) {
+    return { message: 'Error de base de datos: No se pudo guardar la netbook.' };
+  }
+
+  redirect('/inventory');
 }

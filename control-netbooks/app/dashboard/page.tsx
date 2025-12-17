@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { FilePlus, ClipboardList } from 'lucide-react';
+import { FilePlus, ClipboardList, PackagePlus } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -24,13 +24,17 @@ export default function HomePage() {
 
       {/* Contenido Principal - Botones */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-24">
-        <Link href="/netbooks/new" className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-transform hover:scale-105">
+        <Link href="/registros" className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-transform hover:scale-105">
           <FilePlus size={24} />
           <span>Registrar Préstamo</span>
         </Link>
-        <Link href="/registros" className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-green-700 transition-transform hover:scale-105">
+        <Link href="/registros/historial" className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-green-700 transition-transform hover:scale-105">
           <ClipboardList size={24} />
           <span>Ver Registros</span>
+        </Link>
+        <Link href="/inventory" className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-transform hover:scale-105">
+          <PackagePlus size={24} />
+          <span>Gestionar Computadoras</span>
         </Link>
       </div>
     </main>
