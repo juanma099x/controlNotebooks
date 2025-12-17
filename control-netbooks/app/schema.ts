@@ -17,6 +17,7 @@ export const records = sqliteTable('records', {
   horaRetiro: text('hora_retiro').notNull(),
   nombreAlumno: text('nombre_alumno').notNull(),
   curso: text('curso').notNull(),
+  numeroSerie: text('numero_serie').notNull(),
   modeloNetbook: text('modelo_netbook').notNull(),
   descripcionNetbook: text('descripcion_netbook'),
   estado: text('estado', { enum: ['Prestado', 'Devuelto'] }).notNull().default('Prestado'),
