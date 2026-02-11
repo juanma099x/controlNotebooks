@@ -13,7 +13,12 @@ export default async function HistoryPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Historial de Préstamos</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Historial de Préstamos</h1>
+        <Link href="/dashboard">
+          <Button>Volver al Menú</Button>
+        </Link>
+      </div>
       
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -35,7 +40,10 @@ export default async function HistoryPage() {
                     <div className="font-medium text-gray-900">{record.nombreAlumno}</div>
                     <div className="text-gray-500">{record.curso}</div>
                   </td>
-                  <td className="px-6 py-4">{record.modeloNetbook}</td>
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{record.descripcionNetbook}</div>
+                    <div className="text-gray-500">{record.modeloNetbook}</div>
+                  </td>
                   <td className="px-6 py-4">{record.fechaRetiro} <span className="text-gray-500">{record.horaRetiro}</span></td>
                   <td className="px-6 py-4">
                     {record.fechaDevolucion ? (

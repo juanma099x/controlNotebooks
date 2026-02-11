@@ -46,21 +46,20 @@ export async function createLoan(prevState: any, formData: FormData) {
         return { message: 'La netbook no está disponible.' };
     }
 
-    await db.transaction(async (tx) => {
-        await tx.insert(records).values({
+    await db.transaction((tx) => {
+        tx.insert(records).values({
             nombreAlumno,
             curso,
-            numeroSerie: netbook.numeroSerie,
             modeloNetbook: netbook.modelo,
             descripcionNetbook: netbook.descripcion,
             fechaRetiro: fecha,
             horaRetiro: hora,
             inventoryId: netbook.id,
-        });
+        }).run();
 
-        await tx.update(inventory)
+        tx.update(inventory)
             .set({ status: 'Prestado' })
-            .where(eq(inventory.id, inventoryId));
+            .where(eq(inventory.id, inventoryId)).run();
     });
 
     revalidatePath('/registros');
@@ -86,12 +85,12 @@ export async function deleteLoan(id: number) {
       throw new Error('Registro o inventoryId no encontrado.');
     }
 
-    await db.transaction(async (tx) => {
-      await tx.delete(records).where(eq(records.id, id));
+    await db.transaction((tx) => {
+      tx.delete(records).where(eq(records.id, id)).run();
 
-      await tx.update(inventory)
+      tx.update(inventory)
         .set({ status: 'Disponible' })
-        .where(eq(inventory.id, record.inventoryId));
+        .where(eq(inventory.id, record.inventoryId)).run();
     });
 
     revalidatePath('/registros/historial');
@@ -117,14 +116,14 @@ export async function returnLoan(id: number) {
       const fechaDevolucion = now.toISOString().split('T')[0];
       const horaDevolucion = now.toTimeString().split(' ')[0];
   
-      await db.transaction(async (tx) => {
-        await tx.update(records)
+      await db.transaction((tx) => {
+        tx.update(records)
           .set({ estado: 'Devuelto', fechaDevolucion: fechaDevolucion, horaDevolucion: horaDevolucion })
-          .where(eq(records.id, id));
+          .where(eq(records.id, id)).run();
   
-        await tx.update(inventory)
+        tx.update(inventory)
           .set({ status: 'Disponible' })
-          .where(eq(inventory.id, record.inventoryId));
+          .where(eq(inventory.id, record.inventoryId)).run();
       });
   
       revalidatePath('/registros/historial');

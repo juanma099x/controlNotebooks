@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { inventory } from '../schema';
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { eq } from 'drizzle-orm';
