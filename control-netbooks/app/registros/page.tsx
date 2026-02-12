@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { inventory } from '../schema';
+import { inventory } from '../schema'
 
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -15,7 +15,7 @@ export default async function RegistrarPrestamoPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-lg">
+      <div className="p-8 bg-white rounde-lg shadow-md w-full max-w-lg">
         <div className="flex items-center mb-6">
           <Link href="/dashboard" className="text-gray-500 hover:text-gray-800 mr-4">
             <ArrowLeft size={24} />

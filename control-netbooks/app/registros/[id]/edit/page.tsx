@@ -1,45 +1,32 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
-import { records } from '@/app/schema';
+import { db } from '../../../db';
 import { eq } from 'drizzle-orm';
+import { records } from '../../../schema';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { revalidatePath } from 'next/cache';
+import { updateLoan } from '../../actions';
+
 
 async function getLoanById(id: number) {
-  const sqlite = new Database('sqlite.db');
-  const db = drizzle(sqlite);
   const result = await db.select().from(records).where(eq(records.id, id));
   return result[0];
 }
 
-export default async function EditLoanPage({ params }: { params: { id: string } }) {
-  const loanId = Number(params.id);
+export default async function EditLoanPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const loanId = Number(id);
+
+  // Un ID válido debe ser un número entero y positivo.
+  if (!Number.isInteger(loanId) || loanId <= 0) {
+    redirect('/registros/historial');
+  }
+
   const loan = await getLoanById(loanId);
 
   if (!loan) {
     return <div>Registro no encontrado.</div>;
   }
 
-  async function updateLoan(formData: FormData) {
-    'use server';
-
-    const sqlite = new Database('sqlite.db');
-    const db = drizzle(sqlite);
-
-    const values = {
-      nombreAlumno: formData.get('nombreAlumno') as string,
-      curso: formData.get('curso') as string,
-      modeloNetbook: formData.get('modeloNetbook') as string,
-      fechaRetiro: formData.get('fechaRetiro') as string,
-      horaRetiro: formData.get('horaRetiro') as string,
-    };
-
-    await db.update(records).set(values).where(eq(records.id, loanId));
-
-    revalidatePath('/registros');
-    redirect('/registros');
-  }
+  const updateLoanWithId = updateLoan.bind(null, loanId);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-50">
@@ -49,7 +36,7 @@ export default async function EditLoanPage({ params }: { params: { id: string } 
           <p className="text-gray-600 mt-2">Modifica los datos del registro.</p>
         </header>
 
-        <form action={updateLoan} className="w-full p-8 bg-white rounded-lg shadow-md border border-gray-200 space-y-6">
+        <form action={updateLoanWithId} className="w-full p-8 bg-white rounded-lg shadow-md border border-gray-200 space-y-6">
           {/* Alumno y Curso */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -113,7 +100,7 @@ export default async function EditLoanPage({ params }: { params: { id: string } 
 
           {/* Botones de acción */}
           <div className="flex items-center justify-between pt-4">
-            <Link href="/registros" className="text-sm font-medium text-gray-600 hover:text-gray-800">
+            <Link href="/registros/historial" className="text-sm font-medium text-gray-600 hover:text-gray-800">
               ← Cancelar
             </Link>
             <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">

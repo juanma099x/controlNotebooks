@@ -6,14 +6,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { updateComputerSimple } from "../../actions"; // <-- Usamos la nueva acción simple
 
-interface EditPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default async function EditComputerPage({ params }: EditPageProps) {
-  const computerId = parseInt(params.id, 10);
+export default async function EditComputerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const computerId = parseInt(id, 10);
 
   if (isNaN(computerId)) {
     notFound();

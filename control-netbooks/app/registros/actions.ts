@@ -30,7 +30,7 @@ export async function createLoan(prevState: any, formData: FormData) {
     };
   }
 
-  const { nombreAlumno, curso, fechaRetiro, inventoryId } = validatedFields.data;
+  const { nombreAlumno, curso, fechaRetiro, inventoryId, descripcion } = validatedFields.data;
   const [fecha, hora] = fechaRetiro.split('T');
 
   try {
@@ -46,8 +46,8 @@ export async function createLoan(prevState: any, formData: FormData) {
         return { message: 'La netbook no está disponible.' };
     }
 
-    await db.transaction((tx) => {
-        tx.insert(records).values({
+    const result = await db.transaction((tx) => {
+        const insertResult = tx.insert(records).values({
             nombreAlumno,
             curso,
             modeloNetbook: netbook.modelo,
@@ -55,24 +55,32 @@ export async function createLoan(prevState: any, formData: FormData) {
             fechaRetiro: fecha,
             horaRetiro: hora,
             inventoryId: netbook.id,
+            observaciones: descripcion
         }).run();
 
         tx.update(inventory)
             .set({ status: 'Prestado' })
             .where(eq(inventory.id, inventoryId)).run();
+        
+        return insertResult;
     });
+
+    const newId = result.lastInsertRowid;
 
     revalidatePath('/registros');
     revalidatePath('/registros/historial');
     revalidatePath('/dashboard');
-    // redirect to historial after success
-  } catch (error) {
+    
+    redirect('/registros/historial');
+  } catch (error: any) {
+    if (error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
     console.error('Error al registrar el préstamo:', error);
     return {
       message: 'Error de base de datos: No se pudo registrar el préstamo.',
     };
   }
-  redirect('/registros/historial');
 }
 
 export async function deleteLoan(id: number) {
@@ -136,44 +144,46 @@ export async function returnLoan(id: number) {
   }
 
 const UpdateLoanSchema = z.object({
-  nombreAlumno: z.string().optional(),
-  curso: z.string().optional(),
+  nombreAlumno: z.string().min(1, 'El nombre es requerido'),
+  curso: z.string().min(1, 'El curso es requerido'),
+  modeloNetbook: z.string().min(1, 'El modelo es requerido'),
+  fechaRetiro: z.string().min(1, 'La fecha es requerida'),
+  horaRetiro: z.string().min(1, 'La hora es requerida'),
 });
 
 export async function updateLoan(id: number, formData: FormData) {
   const validatedFields = UpdateLoanSchema.safeParse({
-    nombreAlumno: formData.get('nombre-alumno'),
+    nombreAlumno: formData.get('nombreAlumno'),
     curso: formData.get('curso'),
+    modeloNetbook: formData.get('modeloNetbook'),
+    fechaRetiro: formData.get('fechaRetiro'),
+    horaRetiro: formData.get('horaRetiro'),
   });
 
   if (!validatedFields.success) {
+    // Aquí podrías manejar los errores de validación, por ahora lo omitimos para simplicidad
+    // y nos enfocamos en la lógica de actualización.
+    console.error('Validation errors:', validatedFields.error.flatten().fieldErrors);
     return {
-      error: 'Error de validación: ' + validatedFields.error.message,
+      error: 'Error de validación',
     };
   }
 
   try {
-    const dataToUpdate: { nombreAlumno?: string, curso?: string } = {};
-    if (validatedFields.data.nombreAlumno) {
-      dataToUpdate.nombreAlumno = validatedFields.data.nombreAlumno;
-    }
-    if (validatedFields.data.curso) {
-      dataToUpdate.curso = validatedFields.data.curso;
-    }
-
-    if (Object.keys(dataToUpdate).length > 0) {
-      await db.update(records)
-        .set(dataToUpdate)
-        .where(eq(records.id, id));
-    }
+    await db.update(records)
+      .set(validatedFields.data)
+      .where(eq(records.id, id));
 
     revalidatePath('/registros/historial');
-    return { message: 'Préstamo actualizado exitosamente.' };
-
-  } catch (error) {
+  
+  } catch (error: any) {
+    if (error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
     console.error('Error al actualizar el préstamo:', error);
     return { error: 'Error de base de datos: No se pudo actualizar el préstamo.' };
   }
+  redirect('/registros/historial');
 }
 
 export async function getHistory() {
